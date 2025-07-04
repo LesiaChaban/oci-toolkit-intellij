@@ -108,28 +108,3 @@ distributions {
 
 
 
-//publishing {
-//    publications {
-//        maven(MavenPublication) {
-//            groupId = "com.oracle.oci"
-//            artifactId = "intellij.plugin"
-//            version = "0.3-SNAPSHOT"
-//
-//            pom {
-//                name = "My Library"
-//                description = "A description of my library"
-//            }
-//        }
-//    }
-
-//    repositories {
-//        maven {
-//            credentials {
-//                username = "jdbcmaventoolsso_us@oracle.com"
-//                password = "AKCp8jQnLTKdt2DPJyJDv85u74rpyphECVUHw9uxmM1E8eyhk8msHXstPN1MvD6cwAk8YEuxA"
-//            }
-//
-//            url = "https://artifacthub-phx.oci.oraclecorp.com/jdbc-dev-local"
-//        }
-//    }
-//}

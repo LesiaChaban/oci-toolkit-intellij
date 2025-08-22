@@ -1,0 +1,59 @@
+version: 0.1
+component: build
+timeoutInSeconds: 1000
+shell: bash
+
+steps:
+  - type: Command
+    name: "Run Gradle cyclonedxBom command"
+    command: |
+      # For more details, visit https://github.com/CycloneDX/cyclonedx-gradle-plugin/blob/master/README.md
+      cat <<EOF >> init.gradle
+        initscript {
+          repositories {
+            maven {
+              url "https://plugins.gradle.org/m2/"
+            }
+          }
+          dependencies {
+            classpath "org.cyclonedx:cyclonedx-gradle-plugin:2.3.1"
+          }
+        }
+        allprojects {
+          apply plugin:org.cyclonedx.gradle.CycloneDxPlugin
+          cyclonedxBom {
+            includeConfigs = ["runtimeClasspath", "compileClasspath"]
+            skipConfigs = ["testCompileClasspath"]
+            projectType = "application"
+            destination = file(".")
+            outputName = "artifactSBOM_gradle"
+            outputFormat = "json"
+            schemaVersion = "1.4"
+          }
+        }
+      EOF
+      gradle --init-script init.gradle cyclonedxBom -info
+
+  - type: Command
+    name: "Run Maven cycloneDX plugin command"
+    command: |
+      # For more details, visit https://github.com/CycloneDX/cyclonedx-maven-plugin/blob/master/README.md
+      mvn org.cyclonedx:cyclonedx-maven-plugin:2.7.5:makeAggregateBom -DincludeRuntimeScope=true -DincludeCompileScope=true -DincludeProvidedScope=false -DincludeSystemScope=false -DincludeTestScope=false -DoutputFormat=json -DoutputName=artifactSBOM_maven -DschemaVersion=1.4
+      mv target/artifactSBOM_maven.json ${OCI_PRIMARY_SOURCE_DIR}/artifactSBOM_maven.json      
+
+  - type: Command
+    name: "Download CycloneDx-cli executable and install dependencies"
+    command: |
+      wget https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.24.2/cyclonedx-linux-x64
+      yum install -y libicu
+  - type: Command
+    name: "Merge multiple SBOMs using CycloneDX-cli"
+    command: |
+      # For more details, visit https://github.com/CycloneDX/cyclonedx-cli/blob/main/README.md
+      chmod +x cyclonedx-linux-x64
+      ./cyclonedx-linux-x64 merge --input-files artifactSBOM_maven.json artifactSBOM_gradle.json --output-file merged-bom.json
+
+outputArtifacts:
+  - name: artifactSBOM
+    type: BINARY
+    location: ${OCI_PRIMARY_SOURCE_DIR}/merged-bom.json
